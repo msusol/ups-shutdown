@@ -90,7 +90,7 @@ function draw(id,cols,ymax){
   D.forEach((p,i)=>{if(p[5]&&s===null)s=p[0];if((!p[5]||i==D.length-1)&&s!==null){g.fillRect(x(s)-1,T,Math.max(3,x(p[0])-x(s)+2),H-T-B);s=null}});
   g.strokeStyle=css("--grid");g.fillStyle=css("--mut");
   for(let i=0;i<=4;i++){const v=ymax*i/4;g.beginPath();g.moveTo(L,y(v));g.lineTo(W-R,y(v));g.stroke();g.fillText(Math.round(v),4,y(v)+4)}
-  for(let i=0;i<=6;i++){const t=t0+(t1-t0)*i/6;g.fillText(fmt(t),Math.min(x(t),W-90),H-4)}
+  for(let i=0;i<=5;i++){const t=t0+(t1-t0)*i/5;g.textAlign=i==5?"right":"left";g.fillText(fmt(t),i==5?W-R:x(t),H-4)}g.textAlign="left";
   cols.forEach(([k,col,w])=>{g.strokeStyle=css(col);g.lineWidth=w;g.beginPath();D.forEach((p,i)=>i?g.lineTo(x(p[0]),y(p[k])):g.moveTo(x(p[0]),y(p[k])));g.stroke()});
 }
 function render(){
