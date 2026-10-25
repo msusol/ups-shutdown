@@ -89,6 +89,7 @@ Not yet measured: charge-vs-time on battery, time from 40% to the Spark powering
 
 ## Troubleshooting
 
+- **Watcher never starts on battery ("Interactive authentication required" in `journalctl -u nut-monitor`):** `upsmon` runs `ups-notify` as user `nut`, which cannot `systemctl start` without a rule. `ups-shutdown-install.zsh` installs `/etc/sudoers.d/ups-notify` (exactly the start/stop of `ups-battery-watch.service`); re-run it if that file is missing. Test: `sudo -u nut sudo -n /usr/bin/systemctl start --no-block ups-battery-watch.service`, then `journalctl -t ups-watch` shows "on battery; watching" and, on mains, "back on mains" (the unit exits at once, so `is-active` reads inactive).
 - **Watcher fails immediately:** check `journalctl -u ups-battery-watch.service`. zsh reserves names such as `status`; do not use them as variables.
 - **`nut-scanner -U` reports `Cannot load USB library (libusb-1.0.so)`:** install `libusb-1.0-0-dev` (provides the unversioned symlink), then run the scan with `sudo`; without root it reports "Access denied". The scanner is optional: the udev rules already list `06da:ffff` for `usbhid-ups`.
 - **`battery.runtime` looks wrong:** it is a firmware estimate that drifts; the policy uses `battery.charge`.

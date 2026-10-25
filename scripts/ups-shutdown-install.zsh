@@ -32,6 +32,15 @@ Type=simple
 ExecStart=/usr/local/sbin/ups-battery-watch
 UNIT_EOF
 
+# upsmon runs ups-notify as user `nut`; allow exactly these two commands, nothing else
+SUDOERS=/etc/sudoers.d/ups-notify
+cat > $SUDOERS.tmp << 'SUDO_EOF'
+nut ALL=(root) NOPASSWD: /usr/bin/systemctl start --no-block ups-battery-watch.service, /usr/bin/systemctl stop --no-block ups-battery-watch.service
+SUDO_EOF
+chmod 0440 $SUDOERS.tmp
+visudo -cf $SUDOERS.tmp > /dev/null || { rm -f $SUDOERS.tmp; echo "sudoers check failed" >&2; exit 1 }
+mv $SUDOERS.tmp $SUDOERS
+
 [[ -e $CONF.pre-shutdown ]] || cp -a $CONF $CONF.pre-shutdown
 sed -i '/^SHUTDOWNCMD/d' $CONF
 if ! grep -q '^# ups-graceful-shutdown' $CONF; then
