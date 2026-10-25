@@ -1,0 +1,7 @@
+[Unit]
+Description=Rebuild the Spark power dashboard page from the power-log CSVs
+
+[Service]
+Type=oneshot
+ExecStartPre=/usr/bin/mkdir -p %h/.local/state/spark-power/www
+ExecStart=/usr/bin/python3 %h/LosusAI/Projects/LosusAIOps/ups-shutdown/scripts/spark-power-dashboard.py --days 7 --out %h/.local/state/spark-power/www/index.html

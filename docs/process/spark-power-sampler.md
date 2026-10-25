@@ -34,7 +34,19 @@ busy %, load average, UPS status and charge) every 10 seconds so a busy window s
 
    It writes `~/.local/state/spark-power/dashboard.html`, a static page with no network use; regenerate it to refresh.
 
-4. Manual readings: note the UPS display watts at about 05:55, 06:15, 06:40, and when the pipeline finishes, then compare with the CSV rows at those times.
+4. Keep a live copy on the tailnet (systemd user units, no sudo):
+
+   ```zsh
+   zsh scripts/spark-power-dashboard-install.zsh
+   ```
+
+   `spark-power-dashboard.timer` rebuilds the page every 10 minutes into `~/.local/state/spark-power/www/`, and
+   `spark-power-dashboard-web.service` serves only that folder at `http://100.105.205.90:8765/`. It binds to the Spark's
+   Tailscale address, so it is not reachable from the LAN or the internet, and the raw CSVs are not served. To change the
+   address or port: `systemctl --user edit spark-power-dashboard-web.service` and set `DASH_BIND` / `DASH_PORT`.
+   Stop it with `systemctl --user disable --now spark-power-dashboard-web.service spark-power-dashboard.timer`.
+
+5. Manual readings: note the UPS display watts at about 05:55, 06:15, 06:40, and when the pipeline finishes, then compare with the CSV rows at those times.
 
 ## Expected output
 

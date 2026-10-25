@@ -1,0 +1,16 @@
+[Unit]
+Description=Serve the Spark power dashboard page on the tailnet
+
+[Service]
+# Bound to the Spark's Tailscale address only (not the LAN, not localhost). Serves just the www folder, never the CSVs.
+# To change the address or port: systemctl --user edit spark-power-dashboard-web.service and set Environment=DASH_BIND=... / DASH_PORT=...
+Environment=DASH_BIND=100.105.205.90
+Environment=DASH_PORT=8765
+ExecStartPre=/usr/bin/mkdir -p %h/.local/state/spark-power/www
+ExecStart=/usr/bin/python3 -m http.server ${DASH_PORT} --bind ${DASH_BIND} --directory %h/.local/state/spark-power/www
+# Tailscale may not be up yet at boot, so the bind can fail at first: keep retrying.
+Restart=always
+RestartSec=15
+
+[Install]
+WantedBy=default.target
