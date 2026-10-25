@@ -26,7 +26,15 @@ busy %, load average, UPS status and charge) every 10 seconds so a busy window s
    column -s, -t ~/.local/state/spark-power/spark-power-$(date +%F).csv | less -S
    ```
 
-3. Manual readings: note the UPS display watts at about 05:55, 06:15, 06:40, and when the pipeline finishes, then compare with the CSV rows at those times.
+3. View it as charts (GPU watts, CPU %, UPS charge, red bands where the UPS left mains, plus the on-battery events from the NUT journal):
+
+   ```zsh
+   python3 scripts/spark-power-dashboard.py --days 7 --open
+   ```
+
+   It writes `~/.local/state/spark-power/dashboard.html`, a static page with no network use; regenerate it to refresh.
+
+4. Manual readings: note the UPS display watts at about 05:55, 06:15, 06:40, and when the pipeline finishes, then compare with the CSV rows at those times.
 
 ## Expected output
 
