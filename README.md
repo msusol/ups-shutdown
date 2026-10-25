@@ -50,10 +50,21 @@ Change the threshold in `/etc/nut/ups-shutdown.env` (`THRESHOLD=40`). Set `DRY_R
 | `scripts/ups-graceful-shutdown.zsh` | Stop Docker containers, sync, power off |
 | `scripts/ups-notify.zsh` | `upsmon` NOTIFYCMD hook |
 | `scripts/spark-power-log.zsh` | User service that logs GPU watts, CPU, and UPS state every 10 s (see `docs/process/spark-power-sampler.md`) |
+| `scripts/spark-power-dashboard.py` | Builds a static HTML dashboard from the power-log CSVs and the NUT journal |
 | `docs/process/dgx-spark-ups-setup.md` | Setup guide, baseline readings, troubleshooting |
 | `docs/plans/dgx-spark-ups-graceful-shutdown.md` | Implementation plan and status |
 
 See [docs/index.md](docs/index.md) for the full documentation set.
+
+## Power dashboard
+
+`python3 scripts/spark-power-dashboard.py --days 7 --open` charts GPU watts, CPU busy % and UPS
+charge from the sampler's CSVs, shades any time the UPS was off mains, and lists on-battery
+events from the NUT journal. It writes one self-contained page to
+`~/.local/state/spark-power/dashboard.html`; see
+[spark-power-sampler.md](docs/process/spark-power-sampler.md).
+
+![Spark power dashboard: seven days of GPU watts, CPU busy % and UPS charge, with the 2026-10-13 on-battery blip listed](docs/images/spark-power-dashboard.jpg)
 
 ## Status
 
