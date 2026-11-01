@@ -79,6 +79,9 @@ body{margin:0 auto;max-width:1100px;padding:16px;background:var(--bg);color:var(
 h1{font-size:20px;margin:0 0 4px}h2{font-size:15px;margin:22px 0 4px}.mut{color:var(--mut)}
 canvas{width:100%;height:190px;display:block}.stats{display:flex;flex-wrap:wrap;gap:8px 24px;margin:10px 0}
 .stats b{font-size:18px;display:block}li{margin:2px 0}.bad{color:#d33}
+.sl{position:sticky;bottom:0;background:var(--bg);padding:6px 0 8px;border-top:1px solid var(--grid);margin-top:14px}
+.sl canvas{height:56px;touch-action:none;cursor:ew-resize}.sl div{display:flex;justify-content:space-between;font-size:12px}
+.sl button{font:inherit;font-size:12px;background:none;border:1px solid var(--grid);color:var(--fg);border-radius:4px;cursor:pointer}
 </style>
 <h1>Spark power</h1>
 <div class=mut id=range></div>
@@ -89,31 +92,58 @@ canvas{width:100%;height:190px;display:block}.stats{display:flex;flex-wrap:wrap;
 <h2>CPU busy %</h2><canvas id=c2></canvas>
 <h2>UPS charge % <span class=mut>(lowest in each minute)</span></h2><canvas id=c3></canvas>
 <p class=mut>Red bands: the UPS was not on mains. The GPU number is only the GPU, not the whole machine.</p>
+<div class=sl><div><span class=mut id=slr></span><button id=slreset>Show all</button></div><canvas id=sl></canvas></div>
 <script>
 const D=__DATA__, EV=__EVENTS__, GENERATED="__NOW__";
+let V=D, S=[0,1];
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n);
 const fmt=t=>new Date(t*1000).toLocaleString([],{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"});
 function draw(id,cols,ymax){
   const c=document.getElementById(id),dpr=devicePixelRatio||1,W=c.clientWidth,H=c.clientHeight;c.width=W*dpr;c.height=H*dpr;
   const g=c.getContext("2d");g.scale(dpr,dpr);g.font="11px system-ui";
-  const L=40,R=6,T=6,B=18,t0=D[0][0],t1=D[D.length-1][0]||t0+1,x=t=>L+(t-t0)/(t1-t0||1)*(W-L-R),y=v=>T+(1-v/ymax)*(H-T-B);
+  const L=40,R=6,T=6,B=18,t0=V[0][0],t1=V[V.length-1][0]||t0+1,x=t=>L+(t-t0)/(t1-t0||1)*(W-L-R),y=v=>T+(1-v/ymax)*(H-T-B);
   g.fillStyle=css("--bad");let s=null;
-  D.forEach((p,i)=>{if(p[5]&&s===null)s=p[0];if((!p[5]||i==D.length-1)&&s!==null){g.fillRect(x(s)-1,T,Math.max(3,x(p[0])-x(s)+2),H-T-B);s=null}});
+  V.forEach((p,i)=>{if(p[5]&&s===null)s=p[0];if((!p[5]||i==V.length-1)&&s!==null){g.fillRect(x(s)-1,T,Math.max(3,x(p[0])-x(s)+2),H-T-B);s=null}});
   g.strokeStyle=css("--grid");g.fillStyle=css("--mut");
   for(let i=0;i<=4;i++){const v=ymax*i/4;g.beginPath();g.moveTo(L,y(v));g.lineTo(W-R,y(v));g.stroke();g.fillText(Math.round(v),4,y(v)+4)}
   for(let i=0;i<=5;i++){const t=t0+(t1-t0)*i/5;g.textAlign=i==5?"right":"left";g.fillText(fmt(t),i==5?W-R:x(t),H-4)}g.textAlign="left";
-  cols.forEach(([k,col,w])=>{g.strokeStyle=css(col);g.lineWidth=w;g.beginPath();let pen=false;D.forEach(p=>{if(p[k]==null){pen=false;return}pen?g.lineTo(x(p[0]),y(p[k])):g.moveTo(x(p[0]),y(p[k]));pen=true});g.stroke()});
+  cols.forEach(([k,col,w])=>{g.strokeStyle=css(col);g.lineWidth=w;g.beginPath();let pen=false;V.forEach(p=>{if(p[k]==null){pen=false;return}pen?g.lineTo(x(p[0]),y(p[k])):g.moveTo(x(p[0]),y(p[k]));pen=true});g.stroke()});
 }
 function render(){
   if(!D.length){document.getElementById("range").textContent="No data found.";return}
-  document.getElementById("range").textContent=fmt(D[0][0])+" to "+fmt(D[D.length-1][0])+" - built "+GENERATED;
-  const avg=D.reduce((a,p)=>a+p[1],0)/D.length,pk=Math.max(...D.map(p=>p[2])),minc=Math.min(...D.map(p=>p[4])),off=D.filter(p=>p[5]).length,U=D.filter(p=>p[6]!=null),ua=U.length?U.reduce((a,p)=>a+p[6],0)/U.length:null,up=U.length?Math.max(...U.map(p=>p[7])):null;
+  document.getElementById("range").textContent=fmt(V[0][0])+" to "+fmt(V[V.length-1][0])+" - built "+GENERATED;
+  const avg=V.reduce((a,p)=>a+p[1],0)/V.length,pk=Math.max(...V.map(p=>p[2])),minc=Math.min(...V.map(p=>p[4])),off=V.filter(p=>p[5]).length,U=V.filter(p=>p[6]!=null),ua=U.length?U.reduce((a,p)=>a+p[6],0)/U.length:null,up=U.length?Math.max(...U.map(p=>p[7])):null;
   document.getElementById("stats").innerHTML=[["Average GPU watts",avg.toFixed(1)],["Peak GPU watts",pk.toFixed(0)],["Average GPU busy",ua==null?"n/a":ua.toFixed(1)+"%"],["Peak GPU busy",up==null?"n/a":up.toFixed(0)+"%"],["Lowest UPS charge",minc+"%"],["Minutes off mains (in these files)",off]]
     .map(([a,b])=>"<div><b>"+b+"</b><span class=mut>"+a+"</span></div>").join("");
   document.getElementById("events").innerHTML=EV.length?EV.map(e=>"<li>"+e[0].replace("T"," ")+" - "+e[1]+"</li>").join(""):"<li class=mut>None found.</li>";
   draw("c1",[[2,"--peak",1],[1,"--gpu",1.5]],Math.ceil(pk/20)*20||20);draw("c4",[[7,"--busypeak",1],[6,"--busy",1.5]],100);draw("c2",[[3,"--cpu",1.5]],100);draw("c3",[[4,"--chg",1.5]],100);
 }
-render();addEventListener("resize",render);
+function pick(){const T0=D[0][0],T1=D[D.length-1][0],a=T0+(T1-T0)*S[0],b=T0+(T1-T0)*S[1];V=D.filter(p=>p[0]>=a&&p[0]<=b);if(V.length<2)V=D.slice(Math.max(0,D.findIndex(p=>p[0]>=a)-1),Math.max(0,D.findIndex(p=>p[0]>=a)-1)+2)}
+function drawSl(){
+  const c=document.getElementById("sl"),dpr=devicePixelRatio||1,W=c.clientWidth,H=c.clientHeight;c.width=W*dpr;c.height=H*dpr;
+  const g=c.getContext("2d");g.scale(dpr,dpr);const mx=Math.max(...D.map(p=>p[2]))||1,T0=D[0][0],T1=D[D.length-1][0]||T0+1;
+  g.strokeStyle=css("--gpu");g.lineWidth=1;g.beginPath();D.forEach((p,i)=>{const X=(p[0]-T0)/(T1-T0||1)*W,Y=H-2-p[1]/mx*(H-6);i?g.lineTo(X,Y):g.moveTo(X,Y)});g.stroke();
+  const a=S[0]*W,b=S[1]*W;g.fillStyle="rgba(128,128,128,.35)";g.fillRect(0,0,a,H);g.fillRect(b,0,W-b,H);
+  g.strokeStyle=css("--fg");g.lineWidth=2;g.strokeRect(a+1,1,Math.max(2,b-a-2),H-2);
+  g.fillStyle=css("--fg");[a,b].forEach(X=>g.fillRect(X-3,H/2-12,6,24));
+  document.getElementById("slr").textContent="Selected: "+fmt(V[0][0])+" to "+fmt(V[V.length-1][0])+" (drag the handles or the middle)";
+}
+function update(){pick();render();drawSl()}
+(function(){
+  const c=document.getElementById("sl");let mode=null,x0=0,s0=null;const MIN=0.002;
+  c.addEventListener("pointerdown",e=>{const r=c.getBoundingClientRect(),f=(e.clientX-r.left)/r.width,tol=10/r.width;
+    mode=Math.abs(f-S[0])<tol?"a":Math.abs(f-S[1])<tol?"b":(f>S[0]&&f<S[1])?"m":null;
+    if(!mode){const w=S[1]-S[0];S=[Math.min(Math.max(f-w/2,0),1-w),0];S[1]=S[0]+w;mode="m"}
+    x0=f;s0=S.slice();c.setPointerCapture(e.pointerId);update()});
+  c.addEventListener("pointermove",e=>{if(!mode)return;const r=c.getBoundingClientRect(),f=(e.clientX-r.left)/r.width,dx=f-x0;
+    if(mode=="a")S=[Math.min(Math.max(s0[0]+dx,0),s0[1]-MIN),s0[1]];
+    else if(mode=="b")S=[s0[0],Math.max(Math.min(s0[1]+dx,1),s0[0]+MIN)];
+    else{const w=s0[1]-s0[0],a=Math.min(Math.max(s0[0]+dx,0),1-w);S=[a,a+w]}
+    update()});
+  const end=()=>{mode=null};c.addEventListener("pointerup",end);c.addEventListener("pointercancel",end);
+  document.getElementById("slreset").onclick=()=>{S=[0,1];update()};
+})();
+if(D.length)update();else render();addEventListener("resize",()=>{render();if(D.length)drawSl()});
 </script>
 """
 
