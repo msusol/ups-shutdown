@@ -60,10 +60,35 @@ battery, before the UPS cuts out.
 ### Phase 4: test
 
 - [x] Smoke test watcher on mains (2026-09-25): first run failed on zsh read-only `status` variable; fixed (`ups_status`), reinstalled, journal shows "on battery; watching" then "back on mains (status=OL); stopping watch"
-- [ ] Dry run: invoke the shutdown script with power connected and confirm services stop cleanly
-- [ ] Simulate with `upsmon -c fsd` only after confirming nothing critical is running
-- [ ] Pull-the-plug test (record results in the baseline section of `docs/process/dgx-spark-ups-setup.md`) with a light workload; log battery charge/runtime vs. time
-- [ ] Confirm the Spark powers back on / recovers after mains returns (BIOS/UPS auto-restart behavior)
+Order matters; each stage is gated on the one before. Do not run near the 06:00-06:30 CLP pipeline window: Phase 6 is not built, so the shutdown does not stop `clp-*.service` jobs first.
+
+Stage 0, preflight (on mains):
+
+- [ ] `systemctl is-active nut-monitor nut-server`; `sudo grep '^SHUTDOWNCMD' /etc/nut/upsmon.conf` shows one line (2026-11-01: line 545, written by the fixed installer)
+- [ ] Dry run: `DRY_RUN=1 sudo /usr/local/sbin/ups-graceful-shutdown` logs the steps and changes nothing
+- [ ] `docker context ls` shows `default` current; record the running container list
+- [ ] Confirm what is on the battery outlets and that the Spark stays reachable (router on UPS?) or that someone is at the machine
+
+Stage 1, short run with the threshold raised (about 20 min):
+
+- [ ] Set `THRESHOLD=95` in `/etc/nut/ups-shutdown.env`; start the logger in `tmux`: `zsh scripts/ups-log-discharge.zsh`
+- [ ] Unplug the UPS from the wall (never the Spark from the UPS). Pass: `ups.status` shows `OB` and `journalctl -t ups-watch` logs "on battery; watching" within about 15 s
+- [ ] Replug after 60 s. Pass: "back on mains; stopping watch" and the unit exits; unplug again
+- [ ] At 95% the watcher logs "forcing shutdown", Docker stops, and the Spark powers off while the UPS stays on (replaces the earlier `upsmon -c fsd` simulation; this uses the real path)
+
+Stage 2, recovery:
+
+- [ ] Replug mains, press the Spark power button, set `THRESHOLD=40` again
+- [ ] After boot: `restart: unless-stopped` containers are back and match the preflight list; `nut-monitor` active
+- [ ] Spark power-on after mains returns: with `driver.killpower` disabled the Spark never loses power, so expect a manual power-on. Record that as the finding; decide separately whether to use `load.off.delay`. Do not drain the LiFePO4 pack to force it
+
+Stage 3, full-depth run (about 2.3 h at the ~60 W idle figure: 60% of 230 Wh / 60 W):
+
+- [ ] Same setup at `THRESHOLD=40`, light workload only; pull the plug and let it reach the threshold
+- [ ] Record from the CSV: charge vs. time, the time shutdown fired, trigger-to-power-off time, charge left at power-off. Judge whether 40% leaves enough margin
+- [ ] Put the results and the CSV in the baseline section of `docs/process/dgx-spark-ups-setup.md`
+
+Abort at any point before the threshold by replugging mains; the watcher exits on its own. If the Spark does not power off after "forcing shutdown", replug mains and read `journalctl -t ups-shutdown -b -1`.
 
 ### Phase 5: docs and alerting
 

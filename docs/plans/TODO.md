@@ -16,4 +16,4 @@ Plan: [dgx-spark-ups-graceful-shutdown.md](dgx-spark-ups-graceful-shutdown.md)
 
 ### DGX Spark UPS graceful shutdown
 
-1. Phase 4: pull-the-plug test (quiet moment; stops all containers and powers off), then check Spark power-on after mains returns.
+1. Phase 4: staged pull-the-plug test (preflight, short run at `THRESHOLD=95`, recovery, full-depth run at 40%); not near the 06:00 pipeline; expect manual power-on after mains returns (see the plan).
