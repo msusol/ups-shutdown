@@ -39,6 +39,7 @@
 ## How it works
 
 - `upsmon` runs `/usr/local/sbin/ups-notify` on ONBATT/ONLINE, which starts/stops `ups-battery-watch.service`.
+- `ups-battery-watch.service` is deliberately on-demand: the unit has no `[Install]` section, so `systemctl is-enabled` reports `static` and it is `inactive` whenever the Spark is on mains. Do not `enable` it; the ONBATT hook starts it. To check the chain is healthy, use `systemctl is-active nut-monitor` (and the `journalctl -t ups-watch` test in step 4), not the watcher's own state.
 - The watcher polls `battery.charge` every `POLL` seconds; at or below `THRESHOLD` it runs `upsmon -c fsd`.
 - `upsmon` then runs `SHUTDOWNCMD` (`/usr/local/sbin/ups-graceful-shutdown`): stop all Docker containers (30 s timeout), `sync`, `shutdown -h now`. The UPS's own low-battery flag takes the same path.
 - Set `DRY_RUN=1` to run the shutdown script without acting.
@@ -83,7 +84,7 @@ draw over the same idle period, confirming the GPU is a small fraction
 of the ~60 W total — most of that idle load is the rest of the desk's
 devices, not the Spark's GPU.
 
-Expected services after setup: `nut-driver@ups`, `nut-server`, `nut-monitor` active; `ups-battery-watch.service` inactive while on mains.
+Expected services after setup: `nut-driver@goldenmate`, `nut-server`, `nut-monitor` active; `ups-battery-watch.service` inactive and `static` while on mains (expected, see How it works).
 
 Not yet measured: charge-vs-time on battery, time from 40% to the Spark powering off, and whether the Spark powers back on after mains returns. Record those here after the pull-the-plug test (plan Phase 4).
 
