@@ -1,7 +1,7 @@
 #!/usr/bin/env zsh
 # Log UPS state every INTERVAL seconds to a CSV, syncing each line so the log
 # survives a power-off. Usage: zsh scripts/ups-log-discharge.zsh [outfile]
-UPS=${UPS:-ups@localhost}
+UPS=${UPS:-goldenmate@localhost}
 INTERVAL=${INTERVAL:-5}
 OUT=${1:-$HOME/ups-pull-test-$(date +%Y%m%d-%H%M%S).csv}
 echo "timestamp,ups_status,battery_charge,battery_runtime,battery_voltage" >> $OUT
