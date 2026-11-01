@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build a self-contained HTML page from the spark-power CSVs (see docs/process/spark-power-sampler.md).
 
-Charts GPU watts, CPU busy % and UPS charge %, with a red band wherever the UPS was not online (ups_status != OL), plus a list of
+Charts GPU watts, GPU busy %, CPU busy % and UPS charge %, with a red band wherever the UPS was not online (ups_status != OL), plus a list of
 on-battery / back-on-mains events from the NUT journal (those reach back further than the CSVs). No network and no libraries: the
 page draws with a <canvas>, so it opens straight from disk.
 
@@ -21,6 +21,14 @@ DEFAULT_DIR = Path.home() / ".local/state/spark-power"
 BUCKET_S = 60          # one point per minute keeps a week of 10-second rows to ~10k points
 
 
+def _num(v):
+    """A CSV number, or None when the cell is missing or blank (nvidia-smi gave nothing for that sample, or the file predates the column)."""
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return None
+
+
 def load(directory: Path, days: int):
     cutoff = datetime.now() - timedelta(days=days)
     buckets: dict[int, list] = {}
@@ -31,7 +39,7 @@ def load(directory: Path, days: int):
                     ts = datetime.fromisoformat(r["timestamp"])
                     if ts < cutoff:
                         continue
-                    row = (float(r["gpu_watts"]), float(r["cpu_busy_pct"]), float(r["ups_charge"]), r["ups_status"])
+                    row = (float(r["gpu_watts"]), float(r["cpu_busy_pct"]), float(r["ups_charge"]), r["ups_status"], _num(r.get("gpu_util_pct")))
                 except (KeyError, ValueError):
                     continue                                   # a torn or blank row never stops the page
                 buckets.setdefault(int(ts.timestamp()) // BUCKET_S * BUCKET_S, []).append(row)
@@ -39,9 +47,11 @@ def load(directory: Path, days: int):
     for t in sorted(buckets):
         rows = buckets[t]
         n = len(rows)
-        off = any(s != "OL" for *_, s in rows)
+        off = any(r[3] != "OL" for r in rows)
+        util = [r[4] for r in rows if r[4] is not None]
         points.append([t, round(sum(r[0] for r in rows) / n, 2), round(max(r[0] for r in rows), 2),
-                       round(sum(r[1] for r in rows) / n, 1), round(min(r[2] for r in rows), 1), int(off)])
+                       round(sum(r[1] for r in rows) / n, 1), round(min(r[2] for r in rows), 1), int(off),
+                       round(sum(util) / len(util), 1) if util else None, round(max(util), 1) if util else None])  # 6, 7: GPU busy % average and peak
     return points
 
 
@@ -63,8 +73,8 @@ def journal_events(days: int):
 PAGE = """<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1">
 <title>Spark power</title>
 <style>
-:root{--bg:#fff;--fg:#1c1c1c;--mut:#666;--grid:#ddd;--gpu:#2a6fdb;--peak:#9db9ea;--cpu:#e08a1e;--chg:#1f9d55;--bad:rgba(220,40,40,.28)}
-@media(prefers-color-scheme:dark){:root{--bg:#161616;--fg:#e8e8e8;--mut:#999;--grid:#333;--gpu:#6aa3ff;--peak:#3d5a8c;--cpu:#f0a13c;--chg:#4cc77f;--bad:rgba(255,80,80,.35)}}
+:root{--bg:#fff;--fg:#1c1c1c;--mut:#666;--grid:#ddd;--gpu:#2a6fdb;--peak:#9db9ea;--busy:#8a4fd6;--busypeak:#cdb6ee;--cpu:#e08a1e;--chg:#1f9d55;--bad:rgba(220,40,40,.28)}
+@media(prefers-color-scheme:dark){:root{--bg:#161616;--fg:#e8e8e8;--mut:#999;--grid:#333;--gpu:#6aa3ff;--peak:#3d5a8c;--busy:#b08cf0;--busypeak:#58407f;--cpu:#f0a13c;--chg:#4cc77f;--bad:rgba(255,80,80,.35)}}
 body{margin:0 auto;max-width:1100px;padding:16px;background:var(--bg);color:var(--fg);font:14px/1.45 system-ui,sans-serif}
 h1{font-size:20px;margin:0 0 4px}h2{font-size:15px;margin:22px 0 4px}.mut{color:var(--mut)}
 canvas{width:100%;height:190px;display:block}.stats{display:flex;flex-wrap:wrap;gap:8px 24px;margin:10px 0}
@@ -75,6 +85,7 @@ canvas{width:100%;height:190px;display:block}.stats{display:flex;flex-wrap:wrap;
 <div class=stats id=stats></div>
 <h2>UPS events <span class=mut>(from the NUT journal)</span></h2><ul id=events></ul>
 <h2>GPU watts <span class=mut>(line = minute average, pale = minute peak)</span></h2><canvas id=c1></canvas>
+<h2>GPU busy % <span class=mut>(line = minute average, pale = minute peak; the share of time the GPU had work running)</span></h2><canvas id=c4></canvas>
 <h2>CPU busy %</h2><canvas id=c2></canvas>
 <h2>UPS charge % <span class=mut>(lowest in each minute)</span></h2><canvas id=c3></canvas>
 <p class=mut>Red bands: the UPS was not on mains. The GPU number is only the GPU, not the whole machine.</p>
@@ -91,16 +102,16 @@ function draw(id,cols,ymax){
   g.strokeStyle=css("--grid");g.fillStyle=css("--mut");
   for(let i=0;i<=4;i++){const v=ymax*i/4;g.beginPath();g.moveTo(L,y(v));g.lineTo(W-R,y(v));g.stroke();g.fillText(Math.round(v),4,y(v)+4)}
   for(let i=0;i<=5;i++){const t=t0+(t1-t0)*i/5;g.textAlign=i==5?"right":"left";g.fillText(fmt(t),i==5?W-R:x(t),H-4)}g.textAlign="left";
-  cols.forEach(([k,col,w])=>{g.strokeStyle=css(col);g.lineWidth=w;g.beginPath();D.forEach((p,i)=>i?g.lineTo(x(p[0]),y(p[k])):g.moveTo(x(p[0]),y(p[k])));g.stroke()});
+  cols.forEach(([k,col,w])=>{g.strokeStyle=css(col);g.lineWidth=w;g.beginPath();let pen=false;D.forEach(p=>{if(p[k]==null){pen=false;return}pen?g.lineTo(x(p[0]),y(p[k])):g.moveTo(x(p[0]),y(p[k]));pen=true});g.stroke()});
 }
 function render(){
   if(!D.length){document.getElementById("range").textContent="No data found.";return}
   document.getElementById("range").textContent=fmt(D[0][0])+" to "+fmt(D[D.length-1][0])+" - built "+GENERATED;
-  const avg=D.reduce((a,p)=>a+p[1],0)/D.length,pk=Math.max(...D.map(p=>p[2])),minc=Math.min(...D.map(p=>p[4])),off=D.filter(p=>p[5]).length;
-  document.getElementById("stats").innerHTML=[["Average GPU watts",avg.toFixed(1)],["Peak GPU watts",pk.toFixed(0)],["Lowest UPS charge",minc+"%"],["Minutes off mains (in these files)",off]]
+  const avg=D.reduce((a,p)=>a+p[1],0)/D.length,pk=Math.max(...D.map(p=>p[2])),minc=Math.min(...D.map(p=>p[4])),off=D.filter(p=>p[5]).length,U=D.filter(p=>p[6]!=null),ua=U.length?U.reduce((a,p)=>a+p[6],0)/U.length:null,up=U.length?Math.max(...U.map(p=>p[7])):null;
+  document.getElementById("stats").innerHTML=[["Average GPU watts",avg.toFixed(1)],["Peak GPU watts",pk.toFixed(0)],["Average GPU busy",ua==null?"n/a":ua.toFixed(1)+"%"],["Peak GPU busy",up==null?"n/a":up.toFixed(0)+"%"],["Lowest UPS charge",minc+"%"],["Minutes off mains (in these files)",off]]
     .map(([a,b])=>"<div><b>"+b+"</b><span class=mut>"+a+"</span></div>").join("");
   document.getElementById("events").innerHTML=EV.length?EV.map(e=>"<li>"+e[0].replace("T"," ")+" - "+e[1]+"</li>").join(""):"<li class=mut>None found.</li>";
-  draw("c1",[[2,"--peak",1],[1,"--gpu",1.5]],Math.ceil(pk/20)*20||20);draw("c2",[[3,"--cpu",1.5]],100);draw("c3",[[4,"--chg",1.5]],100);
+  draw("c1",[[2,"--peak",1],[1,"--gpu",1.5]],Math.ceil(pk/20)*20||20);draw("c4",[[7,"--busypeak",1],[6,"--busy",1.5]],100);draw("c2",[[3,"--cpu",1.5]],100);draw("c3",[[4,"--chg",1.5]],100);
 }
 render();addEventListener("resize",render);
 </script>

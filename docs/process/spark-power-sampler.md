@@ -26,7 +26,7 @@ busy %, load average, UPS status and charge) every 10 seconds so a busy window s
    column -s, -t ~/.local/state/spark-power/spark-power-$(date +%F).csv | less -S
    ```
 
-3. View it as charts (GPU watts, CPU %, UPS charge, red bands where the UPS left mains, plus the on-battery events from the NUT journal):
+3. View it as charts (GPU watts, GPU busy %, CPU %, UPS charge, red bands where the UPS left mains, plus the on-battery events from the NUT journal):
 
    ```zsh
    python3 scripts/spark-power-dashboard.py --days 7 --open

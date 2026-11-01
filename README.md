@@ -59,7 +59,7 @@ See [docs/index.md](docs/index.md) for the full documentation set.
 
 ## Power dashboard
 
-`python3 scripts/spark-power-dashboard.py --days 7 --open` charts GPU watts, CPU busy % and UPS
+`python3 scripts/spark-power-dashboard.py --days 7 --open` charts GPU watts, GPU busy %, CPU busy % and UPS
 charge from the sampler's CSVs, shades any time the UPS was off mains, and lists on-battery
 events from the NUT journal. It writes one self-contained page to
 `~/.local/state/spark-power/dashboard.html`; see
