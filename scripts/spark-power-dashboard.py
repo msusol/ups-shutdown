@@ -94,7 +94,7 @@ canvas{width:100%;height:190px;display:block}.stats{display:flex;flex-wrap:wrap;
 <p class=mut>Red bands: the UPS was not on mains. The GPU number is only the GPU, not the whole machine.</p>
 <div class=sl><div><span class=mut id=slr></span><button id=slreset>Show all</button></div><canvas id=sl></canvas></div>
 <script>
-const D=__DATA__, EV=__EVENTS__, GENERATED="__NOW__";
+let D=__DATA__, EV=__EVENTS__, GENERATED="__NOW__";
 let V=D, S=[0,1];
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n);
 const fmt=t=>new Date(t*1000).toLocaleString([],{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"});
@@ -144,6 +144,20 @@ function update(){pick();render();drawSl()}
   document.getElementById("slreset").onclick=()=>{S=[0,1];update()};
 })();
 if(D.length)update();else render();addEventListener("resize",()=>{render();if(D.length)drawSl()});
+// Live updates: the timer rebuilds data.json every 10 minutes; poll it and redraw when a new build appears. The selection keeps its start and end times,
+// and a selection that was following the newest data keeps following it.
+function adopt(nd){
+  if(!nd.points||!nd.points.length||nd.generated===GENERATED)return;
+  const T0=D.length?D[0][0]:0,T1=D.length?D[D.length-1][0]:1,a=T0+(T1-T0)*S[0],b=T0+(T1-T0)*S[1],live=S[1]>=0.999||!D.length;
+  D=nd.points;EV=nd.events;GENERATED=nd.generated;
+  const N0=D[0][0],N1=D[D.length-1][0],span=N1-N0||1,w=b-a;
+  let na=live?Math.max(N0,N1-(D.length&&T1>T0?w:span)):a,nb=live?N1:b;
+  if(!live&&(nb<N0||na>N1)){na=N0;nb=N1}
+  S=[Math.min(Math.max((na-N0)/span,0),1),Math.min(Math.max((nb-N0)/span,0),1)];if(S[1]-S[0]<0.002)S=[0,1];
+  update();
+}
+function poll(){if(location.protocol==="file:")return;fetch("data.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{if(d)adopt(d)}).catch(()=>{})}
+setInterval(poll,120000);
 </script>
 """
 
@@ -157,8 +171,12 @@ def main():
     a = p.parse_args()
     points = load(a.dir, a.days)
     out = a.out or a.dir / "dashboard.html"
-    out.write_text(PAGE.replace("__DATA__", json.dumps(points)).replace("__EVENTS__", json.dumps(journal_events(a.days)))
-                   .replace("__NOW__", datetime.now().strftime("%Y-%m-%d %H:%M")))
+    events, now = journal_events(a.days), datetime.now().strftime("%Y-%m-%d %H:%M")
+    out.write_text(PAGE.replace("__DATA__", json.dumps(points)).replace("__EVENTS__", json.dumps(events)).replace("__NOW__", now))
+    data = out.with_name("data.json")      # the page polls this every 2 minutes to stay live without a reload
+    tmp = data.with_name(data.name + ".part")
+    tmp.write_text(json.dumps({"generated": now, "points": points, "events": events}))
+    tmp.replace(data)
     print(f"{out}  ({len(points)} points, {a.days} days)")
     if a.open:
         webbrowser.open(out.as_uri())
