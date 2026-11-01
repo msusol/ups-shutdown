@@ -1,2 +1,3 @@
 *.deb
 *.orig
+__pycache__/

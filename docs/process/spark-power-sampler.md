@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- DGX Spark with the NUT setup from [dgx-spark-ups-setup.md](dgx-spark-ups-setup.md) (the sampler reads `upsc ups`).
+- DGX Spark with the NUT setup from [dgx-spark-ups-setup.md](dgx-spark-ups-setup.md) (the sampler reads `upsc goldenmate`).
 - `nvidia-smi` available. `sudo` is not needed; the sampler is a systemd user service and linger is enabled.
 
 ## Why

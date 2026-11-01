@@ -29,7 +29,7 @@
 4. Verify readings and the watcher:
 
    ```zsh
-   upsc ups
+   upsc goldenmate
    sudo systemctl start ups-battery-watch.service
    journalctl -t ups-watch -n 5 --no-pager
    ```
@@ -45,7 +45,7 @@
 
 ## Expected output
 
-`upsc ups` reports `battery.charge`, `battery.runtime`, `ups.status: OL` on mains.
+`upsc goldenmate` reports `battery.charge`, `battery.runtime`, `ups.status: OL` on mains.
 
 ### Baseline (measured 2026-09-25, on mains)
 
@@ -57,7 +57,7 @@ Conditions: Spark idle-ish (GPU 2% util, 12 W GPU draw, load average about 0.6, 
 Bus 001 Device 002: ID 06da:ffff Phoenixtec Power Co., Ltd Smart-Battery
 ```
 
-`upsc ups` (key values):
+`upsc goldenmate` (key values):
 
 | Variable | Value | Note |
 |---|---|---|

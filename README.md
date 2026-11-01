@@ -34,7 +34,7 @@ Requires `sudo` on the Spark, with the UPS cabled to an open USB-C port (not the
 sudo apt install nut nut-client nut-server
 sudo zsh scripts/ups-nut-setup.zsh
 sudo zsh scripts/ups-shutdown-install.zsh
-upsc ups
+upsc goldenmate
 ```
 
 Change the threshold in `/etc/nut/ups-shutdown.env` (`THRESHOLD=40`). Set `DRY_RUN=1` to run
