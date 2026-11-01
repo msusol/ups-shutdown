@@ -42,12 +42,14 @@ visudo -cf $SUDOERS.tmp > /dev/null || { rm -f $SUDOERS.tmp; echo "sudoers check
 mv $SUDOERS.tmp $SUDOERS
 
 [[ -e $CONF.pre-shutdown ]] || cp -a $CONF $CONF.pre-shutdown
+# SHUTDOWNCMD is replaced on every run, outside the marker check below. It used to be
+# deleted here and re-added only when the marker was missing, so a re-run dropped it.
 sed -i '/^SHUTDOWNCMD/d' $CONF
+echo 'SHUTDOWNCMD "/usr/local/sbin/ups-graceful-shutdown"' >> $CONF
 if ! grep -q '^# ups-graceful-shutdown' $CONF; then
   cat >> $CONF << CONF_EOF
 
 # ups-graceful-shutdown
-SHUTDOWNCMD "/usr/local/sbin/ups-graceful-shutdown"
 NOTIFYCMD /usr/local/sbin/ups-notify
 NOTIFYFLAG ONBATT SYSLOG+EXEC
 NOTIFYFLAG ONLINE SYSLOG+EXEC
