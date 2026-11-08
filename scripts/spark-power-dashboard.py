@@ -73,10 +73,9 @@ def journal_events(days: int):
 PAGE = """<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1">
 <title>Spark power</title>
 <style>
-:root{--bg:#fff;--fg:#1c1c1c;--mut:#666;--grid:#ddd;--gpu:#2a6fdb;--peak:#9db9ea;--busy:#8a4fd6;--busypeak:#cdb6ee;--cpu:#e08a1e;--chg:#1f9d55;--bad:rgba(220,40,40,.28)}
-@media(prefers-color-scheme:dark){:root{--bg:#161616;--fg:#e8e8e8;--mut:#999;--grid:#333;--gpu:#6aa3ff;--peak:#3d5a8c;--busy:#b08cf0;--busypeak:#58407f;--cpu:#f0a13c;--chg:#4cc77f;--bad:rgba(255,80,80,.35)}}
-body{margin:0 auto;max-width:1100px;padding:16px;background:var(--bg);color:var(--fg);font:14px/1.45 system-ui,sans-serif}
-h1{font-size:20px;margin:0 0 4px}h2{font-size:15px;margin:22px 0 4px}.mut{color:var(--mut)}
+:root{--bg:#fafafa;--fg:#111;--mut:#666;--grid:#e3e3e3;--accent:#c9ad5c;--gpu:#2a6fdb;--peak:#9db9ea;--busy:#8a4fd6;--busypeak:#cdb6ee;--cpu:#e08a1e;--chg:#1f9d55;--bad:rgba(220,40,40,.28)}
+body{margin:0 auto;max-width:1100px;padding:16px;background:var(--bg);color:var(--fg);font:14px/1.5 Figtree,Inter,'Helvetica Neue',system-ui,sans-serif}
+h1{font-size:34px;font-weight:800;text-transform:uppercase;letter-spacing:-.01em;margin:0 0 14px;padding-bottom:14px;position:relative}h1::after{content:'';position:absolute;left:0;bottom:0;width:72px;height:4px;background:var(--accent)}h2{font-size:16px;font-weight:700;margin:22px 0 4px}.mut{color:var(--mut)}
 canvas{width:100%;height:190px;display:block}.stats{display:flex;flex-wrap:wrap;gap:8px 24px;margin:10px 0}
 .stats b{font-size:18px;display:block}li{margin:2px 0}.bad{color:#d33}
 .sl{position:sticky;bottom:0;background:var(--bg);padding:6px 0 8px;border-top:1px solid var(--grid);margin-top:14px}
