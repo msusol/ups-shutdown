@@ -64,4 +64,4 @@ Idle baseline on 2026-09-25: GPU about 12 W, CPU about 2% busy, UPS display 63 W
 ## Related docs
 
 - [DGX Spark UPS setup](dgx-spark-ups-setup.md)
-- [DGX Spark UPS graceful shutdown plan](../plans/dgx-spark-ups-graceful-shutdown.md)
+- [DGX Spark UPS graceful shutdown plan](../plans/0001-dgx-spark-ups-graceful-shutdown.md)

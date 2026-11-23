@@ -98,4 +98,4 @@ Not yet measured: charge-vs-time on battery, time from 40% to the Spark powering
 
 ## Related docs
 
-- [DGX Spark UPS graceful shutdown plan](../plans/dgx-spark-ups-graceful-shutdown.md)
+- [DGX Spark UPS graceful shutdown plan](../plans/0001-dgx-spark-ups-graceful-shutdown.md)

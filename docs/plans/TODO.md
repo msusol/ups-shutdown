@@ -1,8 +1,8 @@
 # TODO
 
-## DGX Spark UPS graceful shutdown
+## 0001 DGX Spark UPS graceful shutdown
 
-Plan: [dgx-spark-ups-graceful-shutdown.md](dgx-spark-ups-graceful-shutdown.md)
+Plan: [0001-dgx-spark-ups-graceful-shutdown.md](0001-dgx-spark-ups-graceful-shutdown.md)
 
 - [ ] Phase 0: verify premises (cable UPS, VID:PID, port/cable, power draw)
 - [x] Phase 1: NUT install and driver
@@ -14,6 +14,6 @@ Plan: [dgx-spark-ups-graceful-shutdown.md](dgx-spark-ups-graceful-shutdown.md)
 
 ## Next steps
 
-### DGX Spark UPS graceful shutdown
+### 0001 DGX Spark UPS graceful shutdown
 
 1. Phase 4: staged pull-the-plug test (preflight, short run at `THRESHOLD=95`, recovery, full-depth run at 40%); not near the 06:00 pipeline; expect manual power-on after mains returns (see the plan).

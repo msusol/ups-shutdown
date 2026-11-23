@@ -53,7 +53,7 @@ Change the threshold in `/etc/nut/ups-shutdown.env` (`THRESHOLD=40`). Set `DRY_R
 | `scripts/spark-power-dashboard.py` | Builds a static HTML dashboard from the power-log CSVs and the NUT journal |
 | `scripts/spark-power-dashboard-install.zsh` | Install the user units that rebuild the page every 10 min and serve it on the tailnet |
 | `docs/process/dgx-spark-ups-setup.md` | Setup guide, baseline readings, troubleshooting |
-| `docs/plans/dgx-spark-ups-graceful-shutdown.md` | Implementation plan and status |
+| `docs/plans/0001-dgx-spark-ups-graceful-shutdown.md` | Implementation plan and status |
 
 See [docs/index.md](docs/index.md) for the full documentation set.
 
@@ -73,7 +73,7 @@ A live copy is served on the tailnet by `scripts/spark-power-dashboard-install.z
 
 Setup, hooks, and a mains smoke test are done. The pull-the-plug test and the check that the
 Spark powers back on after an outage are still open; see the
-[plan](docs/plans/dgx-spark-ups-graceful-shutdown.md).
+[plan](docs/plans/0001-dgx-spark-ups-graceful-shutdown.md).
 
 The scripts stop every running Docker container and power off the host. Review them before
 installing, and test at a quiet moment.
