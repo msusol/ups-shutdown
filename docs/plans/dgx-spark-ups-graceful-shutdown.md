@@ -98,7 +98,7 @@ Abort at any point before the threshold by replugging mains; the watcher exits o
 
 ### Phase 6: job-aware shutdown (tracked with the CLP plan)
 
-Full design and CLP-side tasks: `ColoradoLandPartners/docs/plans/2026-09-25-ups-graceful-job-shutdown.md`.
+Full design and CLP-side tasks: `ColoradoLandPartners/docs/plans/0006-ups-graceful-job-shutdown.md`.
 
 - [ ] `ups-wait-for-mains`: block until UPS status is OL and charge >= 70%; block while `/run/ups-shutdown` exists; fail open if `upsc` fails
 - [ ] `ups-graceful-shutdown`: set `/run/ups-shutdown`, stop `clp-*.service` user units (via `runuser` with `XDG_RUNTIME_DIR`), wait up to the grace period, then stop Docker and power off
